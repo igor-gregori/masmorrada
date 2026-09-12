@@ -1,11 +1,31 @@
 import { renderGame, type Placeholder } from './render/canvas'
 import { runPreview } from './dev/preview'
+import { generateRecruitOffer } from './generation/recruit'
+import { showRecruit, showSquad } from './ui/screens'
+import { store } from './ui/store'
 
 runPreview()
 
 const canvas = document.querySelector<HTMLCanvasElement>('#game')!
 const ctx = canvas.getContext('2d')!
 const fpsEl = document.querySelector<HTMLSpanElement>('#fps')!
+const uiRoot = document.querySelector<HTMLDivElement>('#ui-root')!
+
+function setPhase(phase: 'menu' | 'combat'): void {
+  document.body.dataset.phase = phase
+}
+
+function startSquad(): void {
+  showSquad(uiRoot, store.squad, startRecruit)
+}
+
+function startRecruit(): void {
+  const offer = generateRecruitOffer()
+  showRecruit(uiRoot, offer, (creature) => {
+    store.squad[0] = { creature, row: 'front' }
+    startSquad()
+  })
+}
 
 function buildPlaceholders(): Placeholder[] {
   const unit = (team: Placeholder['team'], col: number, row: number, label: string, hp: number): Placeholder => ({
@@ -50,3 +70,6 @@ function loop(now: number): void {
 }
 
 requestAnimationFrame(loop)
+
+setPhase('menu')
+startRecruit()
