@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Masmorrada — F1</title>
+    <style>
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background: #14131f;
+        display: grid;
+        place-items: center;
+        font-family: system-ui, sans-serif;
+        color: #e8e6f5;
+      }
+      main {
+        display: grid;
+        gap: 10px;
+        justify-items: center;
+        padding: 20px;
+      }
+      canvas {
+        background: #0f0e17;
+        border: 2px solid #2c2a40;
+        border-radius: 8px;
+        max-width: 92vw;
+        max-height: 78vh;
+      }
+      #hud {
+        display: flex;
+        gap: 16px;
+        font-size: 13px;
+        color: #9b98b5;
+        align-items: center;
+      }
+      #hud b { color: #e8e6f5; font-weight: 600; }
+      .chip { border: 1px solid #2c2a40; border-radius: 999px; padding: 3px 10px; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <canvas id="game" width="800" height="800"></canvas>
+      <div id="hud">
+        <span class="chip">F1 · Grade 8x8</span>
+        <span class="chip">Placeholders: <b>jogador</b> (azul) vs <b>inimigos</b> (vermelho)</span>
+        <span id="fps">— FPS</span>
+      </div>
+    </main>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
