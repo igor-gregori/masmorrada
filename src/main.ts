@@ -1,4 +1,7 @@
 import { renderGame, type Placeholder } from './render/canvas'
+import { runPreview } from './dev/preview'
+
+runPreview()
 
 const canvas = document.querySelector<HTMLCanvasElement>('#game')!
 const ctx = canvas.getContext('2d')!
