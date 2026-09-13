@@ -86,7 +86,9 @@
       .stat-label { font-size: 10px; color: #9b98b5; text-transform: uppercase; letter-spacing: 0.6px; }
       .stat-value { font-size: 15px; }
 
-      .slots { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; margin-bottom: 26px; }
+      .slots { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; align-items: start; margin-bottom: 26px; }
+      .slots-col { display: grid; gap: 10px; }
+      .slots-col-title { font-size: 12px; letter-spacing: 1px; color: #6f6b8a; text-transform: uppercase; text-align: left; padding-left: 4px; }
       .slot {
         text-align: left;
         background: #1b1a28;
@@ -94,14 +96,35 @@
         border-radius: 14px;
         padding: 14px;
         min-height: 150px;
+        display: grid;
+        gap: 8px;
       }
       .slot.empty { border-style: dashed; border-color: #3a3750; background: transparent; display: grid; place-items: center; color: #6f6b8a; font-size: 13px; gap: 4px; }
+      .slot.empty.inline { min-height: 60px; }
+      .slot-head { display: flex; justify-content: space-between; align-items: center; }
       .slot-idx { font-size: 11px; color: #6f6b8a; text-transform: uppercase; letter-spacing: 0.8px; }
-      .slot-body { display: flex; gap: 12px; margin-top: 10px; }
+      .slot-row { font-size: 11px; font-weight: 700; color: #9b98b5; text-transform: uppercase; letter-spacing: 0.8px; }
+      .slot-body { display: flex; gap: 12px; }
       .slot-info { display: grid; gap: 4px; flex: 1; }
       .slot-name { font-weight: 700; }
       .slot-kind { color: #9b98b5; font-size: 12px; }
+      .slot-actions { display: flex; gap: 8px; }
 
+      .synergies { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 26px; }
+      .synergy { border: 2px solid #2c2a40; border-radius: 12px; padding: 10px 12px; text-align: left; opacity: 0.55; display: grid; gap: 4px; }
+      .synergy.active { opacity: 1; }
+      .synergy-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+      .synergy-kind { font-weight: 700; font-size: 14px; }
+      .synergy-status { font-size: 11px; color: #6f6b8a; text-transform: uppercase; letter-spacing: 0.6px; white-space: nowrap; }
+      .synergy-status.on { color: #7dff8a; font-weight: 700; }
+      .synergy-desc { font-size: 12px; color: #9b98b5; }
+
+      .section-title { font-size: 12px; letter-spacing: 1px; color: #6f6b8a; text-transform: uppercase; text-align: left; margin-bottom: 10px; }
+      .bench { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; margin-bottom: 26px; }
+      .card.bench.assigned { opacity: 0.4; cursor: default; }
+      .assigned-tag { font-size: 11px; color: #6f6b8a; text-transform: uppercase; letter-spacing: 0.6px; }
+
+      .actions { display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; }
       .btn {
         background: #372f5c;
         color: #e8e6f5;
@@ -113,6 +136,11 @@
         cursor: pointer;
       }
       .btn:hover { background: #433972; }
+      .btn.primary { background: #4f8cff; border-color: #6fa3ff; font-weight: 700; }
+      .btn.primary:hover { background: #3f79e8; }
+      .btn.small { font-size: 12px; padding: 6px 12px; }
+      .btn.danger { border-color: #d4473b; color: #ff8d84; }
+      .btn.danger:hover { background: #3a2624; }
     </style>
   </head>
   <body data-phase="menu">

@@ -1,5 +1,6 @@
-import type { Creature, CreatureKind, Squad, SquadMember, Stats } from '../core/types'
+import type { Creature, CreatureKind, Row, Squad, SquadMember, Stats } from '../core/types'
 import { KIND_CATEGORY, KIND_LABEL, RARITY_LABEL, scaledStats } from '../core/balance'
+import { computeMemberStats, countKinds, SYNERGIES } from '../core/synergies'
 import { KIND_COLOR, RARITY_COLOR } from './theme'
 
 function el<K extends keyof HTMLElementTagNameMap>(tag: K, className?: string, text?: string): HTMLElementTagNameMap[K] {
@@ -38,6 +39,8 @@ function statRow(s: Stats): HTMLElement {
   return row
 }
 
+/* ------------------------------ Recrutar ------------------------------ */
+
 function creatureCard(c: Creature, onClick: () => void): HTMLElement {
   const stats = scaledStats(c.kind, c.level, c.rarity)
   const card = el('button', 'card')
@@ -46,7 +49,6 @@ function creatureCard(c: Creature, onClick: () => void): HTMLElement {
 
   const top = el('div', 'card-top')
   top.append(disc(c.kind), el('span', 'card-name', c.name), badge(c.rarity))
-
   const kind = el('div', 'card-kind', `${KIND_LABEL[c.kind]} · ${KIND_CATEGORY[c.kind]} · Nv ${c.level}`)
 
   card.append(top, kind, statRow(stats))
@@ -66,37 +68,131 @@ export function showRecruit(root: HTMLElement, offer: Creature[], onPick: (creat
   root.append(wrap)
 }
 
-function slotEl(member: SquadMember | null, index: number): HTMLElement {
-  const slot = el('div', 'slot' + (member ? '' : ' empty'))
-  slot.append(el('span', 'slot-idx', `Slot ${index + 1}`))
-  if (!member) return slot
+/* ------------------------------ Montagem ------------------------------ */
 
-  const stats = scaledStats(member.creature.kind, member.creature.level, member.creature.rarity)
+export interface AssemblyCallbacks {
+  onAssign: (creature: Creature) => void
+  onRemove: (index: number) => void
+  onToggleRow: (index: number) => void
+  onStart: () => void
+  onRestart: () => void
+}
+
+function synergyStrip(squad: Squad): HTMLElement {
+  const counts = countKinds(squad)
+  const strip = el('div', 'synergies')
+  for (const kind of Object.keys(SYNERGIES) as CreatureKind[]) {
+    const synergy = SYNERGIES[kind]
+    const count = counts[kind]
+    const missing = synergy.threshold - count
+    const active = missing <= 0
+    const pill = el('div', 'synergy' + (active ? ' active' : ''))
+    pill.style.borderColor = active ? KIND_COLOR[kind] : '#2c2a40'
+    const head = el('div', 'synergy-head')
+    head.append(
+      el('span', 'synergy-kind', `${KIND_LABEL[kind]} ×${count}`),
+      el('span', 'synergy-status' + (active ? ' on' : ''), active ? 'ATIVA' : missing > 0 ? `falta ${missing}` : '—'),
+    )
+    pill.append(head, el('div', 'synergy-desc', synergy.description))
+    strip.append(pill)
+  }
+  return strip
+}
+
+function squadSlotEl(index: number, member: SquadMember, squad: Squad, cb: AssemblyCallbacks): HTMLElement {
+  const stats = computeMemberStats(member, squad)
+  const slot = el('div', 'slot')
+  const head = el('div', 'slot-head')
+  head.append(
+    el('span', 'slot-idx', `Slot ${index + 1}`),
+    el('span', 'slot-row', member.row === 'front' ? 'Frente' : 'Trás'),
+  )
+  slot.append(head)
+
   const body = el('div', 'slot-body')
   body.append(disc(member.creature.kind))
   const info = el('div', 'slot-info')
   info.append(
     el('div', 'slot-name', member.creature.name),
-    el('div', 'slot-kind', `${KIND_LABEL[member.creature.kind]} · ${RARITY_LABEL[member.creature.rarity]} · ${member.row === 'front' ? 'Frente' : 'Trás'}`),
+    el('div', 'slot-kind', `${KIND_LABEL[member.creature.kind]} · ${RARITY_LABEL[member.creature.rarity]} · Nv ${member.creature.level}`),
     statRow(stats),
   )
   body.append(info)
   slot.append(body)
+
+  const actions = el('div', 'slot-actions')
+  const toggle = el('button', 'btn small', member.row === 'front' ? '→ Trás' : '→ Frente')
+  toggle.addEventListener('click', () => cb.onToggleRow(index))
+  const remove = el('button', 'btn small danger', '✕ remover')
+  remove.addEventListener('click', () => cb.onRemove(index))
+  actions.append(toggle, remove)
+  slot.append(actions)
   return slot
 }
 
-export function showSquad(root: HTMLElement, squad: Squad, onRestart: () => void): void {
+function benchCard(c: Creature, assigned: boolean, onClick: () => void): HTMLElement {
+  const stats = scaledStats(c.kind, c.level, c.rarity)
+  const card = el('button', 'card bench' + (assigned ? ' assigned' : ''))
+  card.style.borderColor = RARITY_COLOR[c.rarity]
+  card.addEventListener('click', () => { if (!assigned) onClick() })
+
+  const top = el('div', 'card-top')
+  top.append(disc(c.kind), el('span', 'card-name', c.name), badge(c.rarity))
+  const kind = el('div', 'card-kind', `${KIND_LABEL[c.kind]} · ${KIND_CATEGORY[c.kind]} · Nv ${c.level}`)
+  card.append(top, kind, statRow(stats))
+  if (assigned) card.append(el('div', 'assigned-tag', 'no esquadrão'))
+  return card
+}
+
+export function showAssembly(root: HTMLElement, squad: Squad, bench: Creature[], cb: AssemblyCallbacks): void {
   root.replaceChildren()
   const wrap = el('div', 'screen')
   wrap.append(
-    el('h1', 'title', 'Esquadrão'),
-    el('p', 'subtitle', 'Sua criatura recrutada — montagem completa (4 slots, sinergias e frente/trás) vem na próxima fase.'),
+    el('h1', 'title', 'Montar Esquadrão'),
+    el('p', 'subtitle', 'Até 4 criaturas. Clique numa do banco para entrar no esquadrão; troque a linha (frente/trás) e acompanhe as sinergias.'),
   )
+  wrap.append(synergyStrip(squad))
+
   const slots = el('div', 'slots')
-  squad.forEach((member, i) => slots.append(slotEl(member, i)))
+  for (const row of ['front', 'back'] as Row[]) {
+    const col = el('div', 'slots-col')
+    col.append(el('div', 'slots-col-title', row === 'front' ? 'Linha da Frente' : 'Linha de Trás'))
+    const hasMember = squad.some((m) => m && m.row === row)
+    if (!hasMember) col.append(el('div', 'slot empty inline', '—'))
+    squad.forEach((member, i) => {
+      if (member && member.row === row) col.append(squadSlotEl(i, member, squad, cb))
+    })
+    slots.append(col)
+  }
   wrap.append(slots)
-  const back = el('button', 'btn', '↺ Recomeçar (teste)')
-  back.addEventListener('click', onRestart)
+
+  wrap.append(el('div', 'section-title', 'Banco'))
+  const grid = el('div', 'bench')
+  const assigned = new Set(squad.filter(Boolean).map((m) => m!.creature.id))
+  for (const c of bench) grid.append(benchCard(c, assigned.has(c.id), () => cb.onAssign(c)))
+  wrap.append(grid)
+
+  const actions = el('div', 'actions')
+  const start = el('button', 'btn primary', 'Iniciar batalha →')
+  start.addEventListener('click', cb.onStart)
+  const restart = el('button', 'btn', '↺ Recomeçar (novo recrutamento)')
+  restart.addEventListener('click', cb.onRestart)
+  actions.append(start, restart)
+  wrap.append(actions)
+  root.append(wrap)
+}
+
+/* ------------------------- Placeholder de batalha ------------------------- */
+
+export function showBattleSoon(root: HTMLElement, onBack: () => void): void {
+  root.replaceChildren()
+  const wrap = el('div', 'screen')
+  wrap.append(
+    el('h1', 'title', 'Batalha automática'),
+    el('p', 'subtitle', 'F5: o motor de turnos chega em breve. Suas unidades vão ocupar o grid 8x8 e lutar sozinhas.'),
+  )
+  const back = el('button', 'btn', '← Voltar à montagem')
+  back.addEventListener('click', onBack)
   wrap.append(back)
   root.append(wrap)
 }

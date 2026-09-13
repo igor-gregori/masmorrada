@@ -109,7 +109,7 @@ Recrutar (escolher 1 de 3 após vitória) → Montar (4 slots, mostrar sinergias
 - [x] **F1 · Setup + grade** — Vite + TypeScript + Canvas 2D, grid 8x8 desenhado, loop de render, unidades placeholder por lado. *Teste: ver a grade com placeholders coloridos.*
 - [x] **F2 · Modelo de dados** — Tipos, Raridade, Criatura, Esquadrão, Sinergias e a tabela de fórmulas configurável. *Teste: nada visual; validar com um preview dos stats no console.*
 - [x] **F3 · Recrutamento inicial** — Pool de criaturas, tela "Escolher 1 de 3". *Teste: recrutar uma criatura e vê-la no esquadrão.*
-- [ ] **F4 · Montagem + Tática** — 4 slots (troca por criaturas do banco), sinergias por tipo, posicionamento frente/trás. *Teste: montar o time e ver os bônus de par.*
+- [x] **F4 · Montagem + Tática** — 4 slots (troca por criaturas do banco), sinergias por tipo, posicionamento frente/trás. *Teste: montar o time e ver os bônus de par.*
 - [ ] **F5 · Motor de batalha + IA** — Turnos por VEL, mover/atacar no grid, esquiva, morte, regra de frente/trás, IA simples por unidade. *Teste: assistir uma batalha terminar.*
 - [ ] **F6 · Inimigos e chefe** — Geração escalonada de inimigos por batalha (1→2→3) + chefe; organização das 4 batalhas da run. *Teste: batalhas com dificuldade crescente.*
 - [ ] **F7 · Loop completo + recompensas** — Recrutar → Montar → Tática → Batalha → Recompensa (1 de 3: criatura/item/mutação) ×3 → Chefe → Game Over. *Teste: jogar uma run inteira.*

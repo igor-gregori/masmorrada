@@ -1,8 +1,9 @@
 import { renderGame, type Placeholder } from './render/canvas'
 import { runPreview } from './dev/preview'
 import { generateRecruitOffer } from './generation/recruit'
-import { showRecruit, showSquad } from './ui/screens'
-import { store } from './ui/store'
+import { generateBench } from './generation/bench'
+import { showRecruit, showAssembly, showBattleSoon, type AssemblyCallbacks } from './ui/screens'
+import { store, createRun } from './ui/store'
 
 runPreview()
 
@@ -15,16 +16,57 @@ function setPhase(phase: 'menu' | 'combat'): void {
   document.body.dataset.phase = phase
 }
 
-function startSquad(): void {
-  showSquad(uiRoot, store.squad, startRecruit)
+function resetRun(): void {
+  Object.assign(store, createRun())
 }
 
 function startRecruit(): void {
   const offer = generateRecruitOffer()
   showRecruit(uiRoot, offer, (creature) => {
     store.squad[0] = { creature, row: 'front' }
-    startSquad()
+    startAssembly()
   })
+}
+
+function ensureBench(): void {
+  if (store.bench.length === 0) store.bench = generateBench()
+}
+
+function assemblyCallbacks(): AssemblyCallbacks {
+  return {
+    onAssign(creature) {
+      if (store.squad.some((m) => m && m.creature.id === creature.id)) return
+      const index = store.squad.findIndex((m) => !m)
+      if (index >= 0) store.squad[index] = { creature, row: 'front' }
+      renderAssembly()
+    },
+    onRemove(index) {
+      store.squad[index] = null
+      renderAssembly()
+    },
+    onToggleRow(index) {
+      const member = store.squad[index]
+      if (member) member.row = member.row === 'front' ? 'back' : 'front'
+      renderAssembly()
+    },
+    onStart() {
+      showBattleSoon(uiRoot, startAssembly)
+    },
+    onRestart() {
+      resetRun()
+      startRecruit()
+    },
+  }
+}
+
+function renderAssembly(): void {
+  showAssembly(uiRoot, store.squad, store.bench, assemblyCallbacks())
+}
+
+function startAssembly(): void {
+  ensureBench()
+  setPhase('menu')
+  renderAssembly()
 }
 
 function buildPlaceholders(): Placeholder[] {
