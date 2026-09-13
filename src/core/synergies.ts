@@ -55,14 +55,18 @@ export function activeSynergies(squad: Squad): Synergy[] {
   return (Object.values(SYNERGIES) as Synergy[]).filter((s) => (counts[s.kind] ?? 0) >= s.threshold)
 }
 
+export function activeSynergyFor(member: SquadMember, squad: Squad): Synergy | null {
+  const synergy = SYNERGIES[member.creature.kind]
+  return (countKinds(squad)[member.creature.kind] ?? 0) >= synergy.threshold ? synergy : null
+}
+
 export function computeMemberStats(member: SquadMember, squad: Squad): CombatStats {
   const { kind, level, rarity } = member.creature
   const stats = scaledStats(kind, level, rarity)
   let dodge = BASE_DODGE[kind]
 
-  const counts = countKinds(squad)
-  const synergy = SYNERGIES[kind]
-  if ((counts[kind] ?? 0) >= synergy.threshold) {
+  const synergy = activeSynergyFor(member, squad)
+  if (synergy) {
     for (const key of [HP, ATK, DEF, SPD] as const) {
       const bonus = synergy.bonus[key]
       if (bonus) stats[key] = Math.round(stats[key] * (1 + bonus))

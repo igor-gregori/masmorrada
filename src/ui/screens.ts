@@ -182,17 +182,23 @@ export function showAssembly(root: HTMLElement, squad: Squad, bench: Creature[],
   root.append(wrap)
 }
 
-/* ------------------------- Placeholder de batalha ------------------------- */
+/* ------------------------------ Resultado ------------------------------ */
 
-export function showBattleSoon(root: HTMLElement, onBack: () => void): void {
+export function showResult(root: HTMLElement, won: boolean, onAssembly: () => void, onRestart: () => void): void {
   root.replaceChildren()
   const wrap = el('div', 'screen')
   wrap.append(
-    el('h1', 'title', 'Batalha automática'),
-    el('p', 'subtitle', 'F5: o motor de turnos chega em breve. Suas unidades vão ocupar o grid 8x8 e lutar sozinhas.'),
+    el('h1', 'title', won ? 'Vitória!' : 'Derrota'),
+    el('p', 'subtitle', won
+      ? 'Seu esquadrão limpou o grid.'
+      : 'Seu esquadrão foi zerado. Reorganize e tente de novo.'),
   )
-  const back = el('button', 'btn', '← Voltar à montagem')
-  back.addEventListener('click', onBack)
-  wrap.append(back)
+  const actions = el('div', 'actions')
+  const assembly = el('button', 'btn', '← Voltar à montagem')
+  assembly.addEventListener('click', onAssembly)
+  const restart = el('button', 'btn', '↺ Novo recrutamento')
+  restart.addEventListener('click', onRestart)
+  actions.append(assembly, restart)
+  wrap.append(actions)
   root.append(wrap)
 }

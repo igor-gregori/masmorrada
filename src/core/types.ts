@@ -1,6 +1,7 @@
 export type CreatureKind = 'besta' | 'espectro' | 'arauto'
 export type Rarity = 'comum' | 'rara' | 'lendaria'
 export type Row = 'front' | 'back'
+export type Team = 'player' | 'enemy'
 
 export interface Stats {
   hp: number

@@ -1,11 +1,16 @@
-import { renderGame, type Placeholder } from './render/canvas'
+import { renderBattle, FLOATER_MS, type BattleView, type Floater } from './render/canvas'
 import { runPreview } from './dev/preview'
 import { generateRecruitOffer } from './generation/recruit'
 import { generateBench } from './generation/bench'
-import { showRecruit, showAssembly, showBattleSoon, type AssemblyCallbacks } from './ui/screens'
+import { generateEnemyTeam } from './generation/enemy'
+import { buildBattleUnits, createBattle, runRound, type BattleEvent, type BattleState } from './core/combat'
+import { showRecruit, showAssembly, showResult, type AssemblyCallbacks } from './ui/screens'
 import { store, createRun } from './ui/store'
 
 runPreview()
+
+const ROUND_MS = 380
+const RESULT_DELAY_MS = 1200
 
 const canvas = document.querySelector<HTMLCanvasElement>('#game')!
 const ctx = canvas.getContext('2d')!
@@ -50,7 +55,7 @@ function assemblyCallbacks(): AssemblyCallbacks {
       renderAssembly()
     },
     onStart() {
-      showBattleSoon(uiRoot, startAssembly)
+      startCombat()
     },
     onRestart() {
       resetRun()
@@ -69,29 +74,118 @@ function startAssembly(): void {
   renderAssembly()
 }
 
-function buildPlaceholders(): Placeholder[] {
-  const unit = (team: Placeholder['team'], col: number, row: number, label: string, hp: number): Placeholder => ({
-    team,
-    col,
-    row,
-    label,
-    hp,
-    maxHp: 100,
-  })
+/* ------------------------------ Batalha ------------------------------ */
 
-  return [
-    unit('player', 1, 2, 'B', 90),
-    unit('player', 1, 3, 'E', 72),
-    unit('player', 0, 2, 'A', 85),
-    unit('player', 0, 3, 'C', 64),
-    unit('enemy', 6, 2, 'B', 88),
-    unit('enemy', 6, 3, 'E', 70),
-    unit('enemy', 7, 2, 'A', 82),
-    unit('enemy', 7, 3, 'C', 60),
-  ]
+let battle: BattleState | null = null
+let floaters: Floater[] = []
+let lastRoundAt = 0
+let battleOverAt: number | null = null
+let lastActiveId: string | null = null
+let floaterSeq = 0
+
+const PLAYER_ROWS = [1, 2, 4, 5]
+const ENEMY_ROWS = [1, 2, 4, 5]
+
+function startCombat(): void {
+  if (!store.squad.some((m) => m)) return
+  const playerUnits = buildBattleUnits(store.squad, 'player', 1, 0, PLAYER_ROWS)
+  const enemySquad = generateEnemyTeam(4)
+  const enemyUnits = buildBattleUnits(enemySquad, 'enemy', 6, 7, ENEMY_ROWS)
+
+  battle = createBattle(playerUnits, enemyUnits)
+  floaters = []
+  lastRoundAt = 0
+  battleOverAt = null
+  lastActiveId = null
+  setPhase('combat')
 }
 
-const units = buildPlaceholders()
+function applyEvents(events: BattleEvent[], now: number): void {
+  for (const event of events) {
+    if (event.type === 'attack') {
+      lastActiveId = event.attackerId
+      const target = battle!.units.find((u) => u.id === event.targetId)
+      if (target) {
+        floaters.push({
+          id: `f${floaterSeq++}`,
+          col: target.col,
+          row: target.row,
+          text: event.dodged ? 'ESQUIVOU' : `-${event.damage}`,
+          color: event.dodged ? '#7dfcff' : '#ff8d84',
+          born: now,
+        })
+      }
+    } else {
+      lastActiveId = event.unitId
+      if (event.type === 'heal') {
+        const target = battle!.units.find((u) => u.id === event.targetId)
+        if (target) {
+          floaters.push({
+            id: `f${floaterSeq++}`,
+            col: target.col,
+            row: target.row,
+            text: `+${event.amount}`,
+            color: '#7dff8a',
+            born: now,
+          })
+        }
+      } else if (event.type === 'death') {
+        const target = battle!.units.find((u) => u.id === event.unitId)
+        if (target) {
+          floaters.push({
+            id: `f${floaterSeq++}`,
+            col: target.col,
+            row: target.row,
+            text: 'K.O.',
+            color: '#ffb1a9',
+            born: now,
+          })
+        }
+      }
+    }
+  }
+}
+
+function updateBattle(now: number): void {
+  if (!battle) return
+  if (!battle.over && now - lastRoundAt >= ROUND_MS) {
+    lastRoundAt = now
+    applyEvents(runRound(battle), now)
+  }
+  if (battle.over && battleOverAt === null) battleOverAt = now + RESULT_DELAY_MS
+  if (battleOverAt !== null && now >= battleOverAt) {
+    const won = battle.winner === 'player'
+    battle = null
+    setPhase('menu')
+    showResult(uiRoot, won, startAssembly, () => {
+      resetRun()
+      startRecruit()
+    })
+  }
+}
+
+function renderBattleView(now: number): void {
+  if (!battle) return
+  const view: BattleView = {
+    units: battle.units
+      .filter((u) => u.alive)
+      .map((u) => ({
+        id: u.id,
+        team: u.team,
+        kind: u.kind,
+        hp: u.hp,
+        maxHp: u.stats.hp,
+        col: u.col,
+        row: u.row,
+        active: u.id === lastActiveId,
+      })),
+    floaters: floaters.filter((f) => now - f.born < FLOATER_MS),
+    now,
+  }
+  renderBattle(ctx, view)
+}
+
+/* ------------------------------ Loop ------------------------------ */
 
 let last = performance.now()
 let frames = 0
@@ -107,7 +201,8 @@ function loop(now: number): void {
     acc = 0
     frames = 0
   }
-  renderGame(ctx, now / 1000, units)
+  updateBattle(now)
+  renderBattleView(now)
   requestAnimationFrame(loop)
 }
 

@@ -69,5 +69,5 @@ export function scaledStats(kind: CreatureKind, level: number, rarity: Rarity): 
 }
 
 export function computeDamage(atk: number, def: number): number {
-  return Math.max(1, Math.round(atk - def))
+  return Math.max(1, Math.round((atk * atk) / (atk + def)))
 }
