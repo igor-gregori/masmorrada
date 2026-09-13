@@ -92,6 +92,8 @@ Recrutar (escolher 1 de 3 após vitória) → Montar (4 slots, mostrar sinergias
 
 **Ordem de turno:** VEL decrescente; desempate aleatório.
 
+**Escala dos inimigos (F6):** as batalhas usam `statScale` (multiplicador aplicado ao final das stats, sem tocar na fórmula do jogador). Curva atual: b1 = ×1,0 · b2 = ×1,04 · b3 = ×1,10 · chefe = líder ×1,30 + resto ×1,22. Ajuste fino acontece na F7 quando as recompensas (que fazem o time crescer entre batalhas) entrarem no balanço. *Obs de design: o resultado de batalhas quase-espelhadas tem um "ponto de virada" afiado — +8% de stat inverte vitórias (89%→17%). Sem recompensas, um time 100% comum morre na b2 e um time rara limpa ~89% das runs.*
+
 **Esquiva:** chance fixa de esquivar o ataque (10% base do Espectro + 10% por par de Espectros, cap 50%).
 
 **Score:** `Σ (inimigo derrotado × 10 × raridade: 1/2/3) + sobreviventes × 25 + vitória 50 + chefe 100`
@@ -111,7 +113,7 @@ Recrutar (escolher 1 de 3 após vitória) → Montar (4 slots, mostrar sinergias
 - [x] **F3 · Recrutamento inicial** — Pool de criaturas, tela "Escolher 1 de 3". *Teste: recrutar uma criatura e vê-la no esquadrão.*
 - [x] **F4 · Montagem + Tática** — 4 slots (troca por criaturas do banco), sinergias por tipo, posicionamento frente/trás. *Teste: montar o time e ver os bônus de par.*
 - [x] **F5 · Motor de batalha + IA** — Turnos por VEL, mover/atacar no grid, esquiva, morte, regra de frente/trás, IA simples por unidade. *Teste: assistir uma batalha terminar.*
-- [ ] **F6 · Inimigos e chefe** — Geração escalonada de inimigos por batalha (1→2→3) + chefe; organização das 4 batalhas da run. *Teste: batalhas com dificuldade crescente.*
+- [x] **F6 · Inimigos e chefe** — Geração escalonada de inimigos por batalha (1→2→3) + chefe; organização das 4 batalhas da run. *Teste: batalhas com dificuldade crescente.*
 - [ ] **F7 · Loop completo + recompensas** — Recrutar → Montar → Tática → Batalha → Recompensa (1 de 3: criatura/item/mutação) ×3 → Chefe → Game Over. *Teste: jogar uma run inteira.*
 - [ ] **F8 · Score + persistência** — Cálculo de score, tela de Game Over, recorde em localStorage, botão de reiniciar (reset total). *Teste: morrer/vitórificar e o recorde ser salvo.*
 - [ ] **F9 · Polish** — HUD, barras de vida, feedback de dano, cores por tipo, tela do chefe. *Teste: batalhas legíveis e agradáveis.*

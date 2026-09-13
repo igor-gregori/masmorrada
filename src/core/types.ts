@@ -20,6 +20,7 @@ export interface Creature {
   kind: CreatureKind
   rarity: Rarity
   level: number
+  statScale?: number
 }
 
 export interface SquadMember {

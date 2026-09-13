@@ -74,5 +74,12 @@ export function computeMemberStats(member: SquadMember, squad: Squad): CombatSta
     if (synergy.dodgePerPair) dodge += synergy.dodgePerPair
   }
 
+  const scale = member.creature.statScale ?? 1
+  if (scale !== 1) {
+    for (const key of [HP, ATK, DEF, SPD] as const) {
+      stats[key] = Math.round(stats[key] * scale)
+    }
+  }
+
   return { ...stats, dodge: Math.min(DODGE_CAP, dodge) }
 }

@@ -2,7 +2,7 @@ import { renderBattle, FLOATER_MS, type BattleView, type Floater } from './rende
 import { runPreview } from './dev/preview'
 import { generateRecruitOffer } from './generation/recruit'
 import { generateBench } from './generation/bench'
-import { generateEnemyTeam } from './generation/enemy'
+import { generateEnemyTeam, generateBossTeam } from './generation/enemy'
 import { buildBattleUnits, createBattle, runRound, type BattleEvent, type BattleState } from './core/combat'
 import { showRecruit, showAssembly, showResult, type AssemblyCallbacks } from './ui/screens'
 import { store, createRun } from './ui/store'
@@ -65,7 +65,7 @@ function assemblyCallbacks(): AssemblyCallbacks {
 }
 
 function renderAssembly(): void {
-  showAssembly(uiRoot, store.squad, store.bench, assemblyCallbacks())
+  showAssembly(uiRoot, store.squad, store.bench, assemblyCallbacks(), store.battle, store.battle > 3)
 }
 
 function startAssembly(): void {
@@ -82,6 +82,7 @@ let lastRoundAt = 0
 let battleOverAt: number | null = null
 let lastActiveId: string | null = null
 let floaterSeq = 0
+let activeBattle = 1
 
 const PLAYER_ROWS = [1, 2, 4, 5]
 const ENEMY_ROWS = [1, 2, 4, 5]
@@ -89,7 +90,9 @@ const ENEMY_ROWS = [1, 2, 4, 5]
 function startCombat(): void {
   if (!store.squad.some((m) => m)) return
   const playerUnits = buildBattleUnits(store.squad, 'player', 1, 0, PLAYER_ROWS)
-  const enemySquad = generateEnemyTeam(4)
+  const boss = store.battle > 3
+  activeBattle = boss ? 4 : store.battle
+  const enemySquad = boss ? generateBossTeam() : generateEnemyTeam(store.battle)
   const enemyUnits = buildBattleUnits(enemySquad, 'enemy', 6, 7, ENEMY_ROWS)
 
   battle = createBattle(playerUnits, enemyUnits)
@@ -155,11 +158,17 @@ function updateBattle(now: number): void {
   if (battle.over && battleOverAt === null) battleOverAt = now + RESULT_DELAY_MS
   if (battleOverAt !== null && now >= battleOverAt) {
     const won = battle.winner === 'player'
+    const boss = activeBattle === 4
     battle = null
+    if (won && !boss) store.battle += 1
     setPhase('menu')
-    showResult(uiRoot, won, startAssembly, () => {
-      resetRun()
-      startRecruit()
+    showResult(uiRoot, { won, battle: activeBattle, boss }, {
+      onNext: () => startAssembly(),
+      onAssembly: () => startAssembly(),
+      onRestart: () => {
+        resetRun()
+        startRecruit()
+      },
     })
   }
 }

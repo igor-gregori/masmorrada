@@ -144,12 +144,15 @@ function benchCard(c: Creature, assigned: boolean, onClick: () => void): HTMLEle
   return card
 }
 
-export function showAssembly(root: HTMLElement, squad: Squad, bench: Creature[], cb: AssemblyCallbacks): void {
+export function showAssembly(root: HTMLElement, squad: Squad, bench: Creature[], cb: AssemblyCallbacks, battle = 1, boss = false): void {
   root.replaceChildren()
   const wrap = el('div', 'screen')
+  const subtitle = boss
+    ? 'O chefe da masmorra está à frente. Revise o esquadrão antes da descida final.'
+    : `Batalha ${battle} de 3. Até 4 criaturas; troque linhas (frente/trás) e acompanhe as sinergias.`
   wrap.append(
-    el('h1', 'title', 'Montar Esquadrão'),
-    el('p', 'subtitle', 'Até 4 criaturas. Clique numa do banco para entrar no esquadrão; troque a linha (frente/trás) e acompanhe as sinergias.'),
+    el('h1', 'title', boss ? 'Chefe da Masmorra' : 'Montar Esquadrão'),
+    el('p', 'subtitle', subtitle),
   )
   wrap.append(synergyStrip(squad))
 
@@ -184,21 +187,54 @@ export function showAssembly(root: HTMLElement, squad: Squad, bench: Creature[],
 
 /* ------------------------------ Resultado ------------------------------ */
 
-export function showResult(root: HTMLElement, won: boolean, onAssembly: () => void, onRestart: () => void): void {
+export interface ResultInfo {
+  won: boolean
+  battle: number
+  boss: boolean
+}
+
+export interface ResultCallbacks {
+  onNext?: () => void
+  onAssembly: () => void
+  onRestart: () => void
+}
+
+export function showResult(root: HTMLElement, info: ResultInfo, cb: ResultCallbacks): void {
   root.replaceChildren()
   const wrap = el('div', 'screen')
-  wrap.append(
-    el('h1', 'title', won ? 'Vitória!' : 'Derrota'),
-    el('p', 'subtitle', won
-      ? 'Seu esquadrão limpou o grid.'
-      : 'Seu esquadrão foi zerado. Reorganize e tente de novo.'),
-  )
+  const won = info.won
+
+  let title: string
+  let subtitle: string
+  if (info.boss) {
+    title = won ? 'Masmorra zerada!' : 'Derrota no chefe'
+    subtitle = won
+      ? 'O chefe caiu e a masmorra foi limpa. (Game Over e score chegam nas próximas fases.)'
+      : 'O chefe foi demais para o esquadrão. A run termina aqui por enquanto.'
+  } else {
+    title = won ? 'Vitória!' : 'Derrota'
+    subtitle = won
+      ? `Batalha ${info.battle} de 3 vencida. Prepare-se para a próxima.`
+      : 'Seu esquadrão foi zerado. Reorganize e tente de novo.'
+  }
+
+  wrap.append(el('h1', 'title', title), el('p', 'subtitle', subtitle))
+
   const actions = el('div', 'actions')
-  const assembly = el('button', 'btn', '← Voltar à montagem')
-  assembly.addEventListener('click', onAssembly)
-  const restart = el('button', 'btn', '↺ Novo recrutamento')
-  restart.addEventListener('click', onRestart)
-  actions.append(assembly, restart)
+  if (won) {
+    const next = el('button', 'btn primary', info.boss ? '↺ Nova run' : 'Próxima batalha →')
+    next.addEventListener('click', info.boss ? cb.onRestart : cb.onNext ?? cb.onAssembly)
+    actions.append(next)
+    const assembly = el('button', 'btn', '← Voltar à montagem')
+    assembly.addEventListener('click', cb.onAssembly)
+    actions.append(assembly)
+  } else {
+    const assembly = el('button', 'btn primary', '← Voltar à montagem')
+    assembly.addEventListener('click', cb.onAssembly)
+    const restart = el('button', 'btn', '↺ Novo recrutamento')
+    restart.addEventListener('click', cb.onRestart)
+    actions.append(assembly, restart)
+  }
   wrap.append(actions)
   root.append(wrap)
 }
